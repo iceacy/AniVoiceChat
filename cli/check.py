@@ -1,6 +1,9 @@
 """检查配置命令"""
 import argparse
 from .base import Command
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class CheckCommand(Command):
@@ -34,14 +37,14 @@ class CheckCommand(Command):
             valid = config.validate()
 
             if valid:
-                print("[SUCCESS] 配置验证通过")
+                logger.info("配置验证通过")
 
                 tts = GPTSoVITS(config.tts)
                 if tts.check_server():
-                    print("[SUCCESS] TTS服务器连接正常")
+                    logger.info("TTS服务器连接正常")
                 else:
-                    print("[WARNING] TTS服务器未运行，请启动GPT-SoVITS API服务")
-                    print("[INFO] 运行: python start_tts_server.bat")
+                    logger.warning("TTS服务器未运行，请启动GPT-SoVITS API服务")
+                    logger.info("运行: python start_tts_server.bat")
 
                 if args.verbose:
                     print("\n[详细信息]")
@@ -53,7 +56,7 @@ class CheckCommand(Command):
             return 0 if valid else 1
 
         except Exception as e:
-            print(f"[ERROR] 配置检查失败: {e}")
+            logger.error(f"配置检查失败: {e}")
             if args.verbose:
                 import traceback
                 traceback.print_exc()

@@ -2,6 +2,9 @@
 import argparse
 from pathlib import Path
 from .base import Command
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ChatCommand(Command):
@@ -25,10 +28,10 @@ class ChatCommand(Command):
                 config.tts.character = args.character
 
             if not config.validate():
-                print("[ERROR] 配置验证失败，请运行 'python -m AniVoiceChat check' 检查")
+                logger.error("配置验证失败，请运行 'python -m AniVoiceChat check' 检查")
                 return 1
 
-            print("\n[INIT] 初始化对话管道...")
+            logger.info("初始化对话管道...")
             pipeline = DialoguePipeline(config)
 
             print("\n提示:")
@@ -51,7 +54,7 @@ class ChatCommand(Command):
                         continue
 
                     if user_input.lower() in ["quit", "exit", "q"]:
-                        print("[INFO] 再见!")
+                        logger.info("再见!")
                         break
 
                     if user_input.lower() == "clear":
@@ -65,7 +68,7 @@ class ChatCommand(Command):
                     if user_input.lower().startswith("audio "):
                         audio_path = user_input[6:].strip()
                         if not Path(audio_path).exists():
-                            print(f"[ERROR] 文件不存在: {audio_path}")
+                            logger.error(f"文件不存在: {audio_path}")
                             continue
                         result = pipeline.process_audio_input(audio_path)
                     else:
@@ -75,17 +78,17 @@ class ChatCommand(Command):
                         self._handle_result(pipeline, result, output_dir)
 
                 except KeyboardInterrupt:
-                    print("\n[INFO] 再见!")
+                    logger.info("再见!")
                     break
                 except Exception as e:
-                    print(f"[ERROR] 处理失败: {e}")
+                    logger.error(f"处理失败: {e}")
                     import traceback
                     traceback.print_exc()
 
             return 0
 
         except Exception as e:
-            print(f"[ERROR] 初始化失败: {e}")
+            logger.error(f"初始化失败: {e}")
             import traceback
             traceback.print_exc()
             return 1
@@ -93,7 +96,7 @@ class ChatCommand(Command):
     def _show_history(self, pipeline) -> None:
         """显示对话历史"""
         history = pipeline.get_history()
-        print("\n[对话历史]")
+        logger.info("对话历史")
         for i, msg in enumerate(history[-10:], 1):
             role = "你" if msg["role"] == "user" else "角色"
             print(f"  {i}. {role}: {msg['content']}")
@@ -110,4 +113,4 @@ class ChatCommand(Command):
         if audio_data is not None:
             output_path = output_dir / f"response_{len(pipeline.history)//2}.wav"
             pipeline.save_response_audio(audio_data, str(output_path))
-            print(f"[INFO] 音频已保存: {output_path}")
+            logger.info(f"音频已保存: {output_path}")

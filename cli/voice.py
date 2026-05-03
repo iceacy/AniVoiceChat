@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 import numpy as np
 from .base import Command
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from src.audio import MicrophoneRecorder, AudioPlayer
@@ -36,13 +39,13 @@ class VoiceCommand(Command):
                 config.tts.character = args.character
 
             if not config.validate():
-                print("[ERROR] 配置验证失败")
+                logger.error("配置验证失败")
                 return 1
 
-            print("\n[INIT] 初始化对话管道...")
+            logger.info("初始化对话管道...")
             pipeline = DialoguePipeline(config)
 
-            print("\n[INIT] 初始化音频设备...")
+            logger.info("初始化音频设备...")
             recorder = MicrophoneRecorder(
                 sample_rate=config.audio.sample_rate,
                 chunk_size=config.audio.chunk_size,
@@ -63,7 +66,7 @@ class VoiceCommand(Command):
             return self._main_loop(recorder, player, pipeline, output_dir, args.no_save)
 
         except Exception as e:
-            print(f"[ERROR] 初始化失败: {e}")
+            logger.error(f"初始化失败: {e}")
             import traceback
             traceback.print_exc()
             return 1
@@ -91,16 +94,16 @@ class VoiceCommand(Command):
                 user_input = input("\n按回车开始录音... > ").strip()
 
                 if user_input.lower() in ["quit", "exit", "q"]:
-                    print("[INFO] 再见!")
+                    logger.info("再见!")
                     break
 
                 if user_input.lower() == "clear":
                     pipeline.clear_history()
                     continue
 
-                print("\n[录音] 录音中...")
-                print("[录音] 请对着麦克风说话")
-                print("[录音] 说完后按回车键停止，或等待自动检测")
+                logger.info("录音中...")
+                logger.info("请对着麦克风说话")
+                logger.info("说完后按回车键停止，或等待自动检测")
 
                 recorder.start_recording()
 
@@ -124,13 +127,13 @@ class VoiceCommand(Command):
                 audio_data = recorder.stop_recording()
 
                 duration = len(audio_data) / 16000
-                print(f"[录音] 完成，时长: {duration:.2f}秒")
+                logger.info(f"录音完成，时长: {duration:.2f}秒")
 
                 if duration < 0.3:
-                    print("[WARNING] 录音太短，请重试")
+                    logger.warning("录音太短，请重试")
                     continue
 
-                print("\n[处理] ASR识别中...")
+                logger.info("ASR识别中...")
                 result = pipeline.process_audio_input(audio_data)
 
                 if result:
@@ -140,19 +143,19 @@ class VoiceCommand(Command):
                     print(f"角色: {response_text}")
 
                     if audio_output is not None:
-                        print("[播放] 播放回复语音...")
+                        logger.info("播放回复语音...")
                         player.play(audio_output, blocking=True)
 
                         if not no_save:
                             output_path = output_dir / f"response_{len(pipeline.history)//2}.wav"
                             pipeline.save_response_audio(audio_output, str(output_path))
-                            print(f"[INFO] 音频已保存: {output_path}")
+                            logger.info(f"音频已保存: {output_path}")
 
             except KeyboardInterrupt:
-                print("\n[INFO] 再见!")
+                logger.info("再见!")
                 break
             except Exception as e:
-                print(f"[ERROR] 处理失败: {e}")
+                logger.error(f"处理失败: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -177,7 +180,7 @@ class VoiceCommand(Command):
 
         while time.time() - start_time < 30.0:
             if stop_event.is_set():
-                print("\n[录音] 手动停止")
+                logger.info("录音手动停止")
                 break
 
             time.sleep(check_interval)
@@ -200,7 +203,7 @@ class VoiceCommand(Command):
                         if energy < 0.02:
                             silent_count += 1
                             if silent_count >= silence_chunks:
-                                print("\n[录音] 检测到静音，自动停止")
+                                logger.info("检测到静音，自动停止")
                                 stop_event.set()
                                 break
                         else:

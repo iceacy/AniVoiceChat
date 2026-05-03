@@ -1,6 +1,9 @@
 """LLM测试命令"""
 import argparse
 from cli.base import Command
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TestLLMCommand(Command):
@@ -22,12 +25,12 @@ class TestLLMCommand(Command):
             config = Config.load()
 
             if not config.llm.api_key:
-                print("[ERROR] LLM API密钥未配置")
+                logger.error("LLM API密钥未配置")
                 return 1
 
-            print("\n[INIT] 初始化LLM...")
-            print(f"[INFO] 提供商: {config.llm.provider}")
-            print(f"[INFO] 模型: {config.llm.model}")
+            logger.info("初始化LLM...")
+            logger.info(f"提供商: {config.llm.provider}")
+            logger.info(f"模型: {config.llm.model}")
 
             llm = DeepSeekLLM(config.llm)
 
@@ -35,15 +38,15 @@ class TestLLMCommand(Command):
                 llm.set_character(args.character)
 
             if args.text:
-                print(f"\n[TEST] 输入: {args.text}")
-                print("[TEST] 生成回复...")
+                logger.info(f"输入: {args.text}")
+                logger.info("生成回复...")
 
                 response = llm.chat(args.text, [])
 
                 if response:
-                    print(f"[RESULT] 回复: {response}")
+                    logger.info(f"回复: {response}")
                 else:
-                    print("[ERROR] 生成失败")
+                    logger.error("生成失败")
                     return 1
             else:
                 print("\n[提示] 使用参数指定测试文本")
@@ -52,7 +55,7 @@ class TestLLMCommand(Command):
             return 0
 
         except Exception as e:
-            print(f"[ERROR] 测试失败: {e}")
+            logger.error(f"测试失败: {e}")
             import traceback
             traceback.print_exc()
             return 1
