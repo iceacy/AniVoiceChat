@@ -1,0 +1,32 @@
+# AniVoiceChat 依赖清单
+# Python 3.10+
+
+# === ASR模块 ===
+qwen-asr
+torch>=2.0.0
+torchaudio>=2.0.0
+soundfile
+modelscope
+
+# === 音频处理 ===
+pyaudio
+numpy
+scipy>=1.9.0
+
+# === LLM模块 ===
+openai  # DeepSeek API兼容OpenAI接口
+
+# === TTS模块 ===
+# GPT-SoVITS依赖（从原项目继承）
+# 这些包已安装在GPT-SoVITS环境中，这里仅作记录
+
+# === Web界面（可选）===
+gradio>=4.0.0
+
+# === 工具库 ===
+pyyaml>=6.0
+python-dotenv
+
+# === 测试框架 ===
+pytest>=7.0.0
+pytest-cov>=4.0.0
